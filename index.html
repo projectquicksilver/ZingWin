@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coromandel CPC — Lucky Draw 2025</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Exo+2:wght@300;400;600;700;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+
+  <!-- GSAP + Plugins -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/TextPlugin.min.js"></script>
+
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <style>
+    /* ===== CSS VARIABLES ===== */
+    :root {
+      --gold: #FFD700;
+      --gold-light: #FFF176;
+      --crimson: #FF2D55;
+      --electric: #00F5FF;
+      --violet: #BF00FF;
+      --dark: #050510;
+      --dark-card: rgba(5, 5, 30, 0.75);
+      --panel: rgba(255, 215, 0, 0.06);
+      --border-glow: rgba(255, 215, 0, 0.35);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: var(--dark);
+      font-family: 'Exo 2', sans-serif;
+      color: #fff;
+    }
+
+    /* ===== BACKGROUND CANVAS ===== */
+    #bgCanvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ===== NOISE OVERLAY ===== */
+    .noise {
+      position: fixed; inset: 0; z-index: 1; pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity: 0.4;
+    }
+
+    /* ===== RADIAL VIGNETTE ===== */
+    .vignette {
+      position: fixed; inset: 0; z-index: 1; pointer-events: none;
+      background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(5,5,16,0.85) 100%);
+    }
+
+    /* ===== MAIN WRAPPER ===== */
+    #app {
+      position: relative; z-index: 2;
+      width: 100vw; height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-start;
+      overflow: hidden;
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      width: 100%;
+      padding: 18px 40px 0;
+      display: flex; align-items: center; justify-content: space-between;
+      position: relative; z-index: 10;
+    }
+
+    .logo-badge {
+      display: flex; align-items: center; gap: 12px;
+    }
+
+    .logo-hex {
+      width: 46px; height: 46px;
+      background: linear-gradient(135deg, var(--gold), var(--crimson));
+      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 11px; font-weight: 900; color: #000;
+      letter-spacing: 0;
+      animation: hexSpin 8s linear infinite;
+    }
+
+    @keyframes hexSpin {
+      0% { filter: hue-rotate(0deg) drop-shadow(0 0 8px var(--gold)); }
+      50% { filter: hue-rotate(30deg) drop-shadow(0 0 16px var(--crimson)); }
+      100% { filter: hue-rotate(0deg) drop-shadow(0 0 8px var(--gold)); }
+    }
+
+    .logo-text {
+      display: flex; flex-direction: column; line-height: 1;
+    }
+
+    .logo-brand {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px; letter-spacing: 3px;
+      background: linear-gradient(90deg, var(--gold), #fff, var(--gold));
+      background-size: 200% auto;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      animation: shimmerText 3s linear infinite;
+    }
+
+    @keyframes shimmerText {
+      to { background-position: 200% center; }
+    }
+
+    .logo-sub {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 9px; font-weight: 300;
+      letter-spacing: 5px; color: rgba(255,215,0,0.6);
+      text-transform: uppercase;
+    }
+
+    /* THANK YOU BTN */
+    .btn-thankyou {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      text-decoration: none;
+      padding: 10px 22px;
+      color: var(--dark);
+      background: linear-gradient(135deg, var(--gold) 0%, #FFA500 100%);
+      border-radius: 8px;
+      border: none;
+      position: relative; overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s;
+      box-shadow: 0 0 20px rgba(255,215,0,0.4), 0 0 40px rgba(255,215,0,0.15);
+    }
+
+    .btn-thankyou::before {
+      content: '';
+      position: absolute; top: -50%; left: -60%;
+      width: 40%; height: 200%;
+      background: rgba(255,255,255,0.35);
+      transform: skewX(-20deg);
+      animation: btnShine 2.5s infinite;
+    }
+
+    @keyframes btnShine {
+      0% { left: -60%; }
+      100% { left: 160%; }
+    }
+
+    .btn-thankyou:hover { transform: scale(1.07); }
+
+    /* ===== HERO TITLE ===== */
+    .hero {
+      margin-top: 10px;
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center; position: relative;
+    }
+
+    .hero-eyebrow {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 10px; font-weight: 400;
+      letter-spacing: 8px; color: var(--electric);
+      text-transform: uppercase;
+      opacity: 0.8;
+      margin-bottom: 4px;
+    }
+
+    .hero-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(42px, 7vw, 88px);
+      line-height: 0.9;
+      letter-spacing: 4px;
+      background: linear-gradient(180deg, #fff 0%, var(--gold) 50%, #FFA500 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 30px rgba(255,215,0,0.5));
+      position: relative;
+    }
+
+    .hero-title .accent {
+      background: linear-gradient(180deg, var(--crimson), var(--violet));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .hero-rule {
+      width: 200px; height: 2px; margin: 8px auto 4px;
+      background: linear-gradient(90deg, transparent, var(--gold), var(--crimson), transparent);
+      animation: rulePulse 2s ease-in-out infinite;
+    }
+
+    @keyframes rulePulse {
+      0%, 100% { opacity: 0.6; transform: scaleX(0.8); }
+      50% { opacity: 1; transform: scaleX(1); }
+    }
+
+    .hero-sub {
+      font-family: 'Exo 2', sans-serif;
+      font-size: clamp(11px, 1.5vw, 14px);
+      font-weight: 300; letter-spacing: 3px;
+      color: rgba(255,255,255,0.55);
+      text-transform: uppercase;
+    }
+
+    /* ===== CARD GRID ===== */
+    .card-stage {
+      flex: 1;
+      width: 100%;
+      display: flex; align-items: center; justify-content: center;
+      padding: 10px 30px 10px;
+      position: relative;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 14px;
+      width: 100%;
+      max-width: 1200px;
+    }
+
+    /* ===== CARD 3D FLIP ===== */
+    .card-wrap {
+      perspective: 1000px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .card-inner {
+      width: 100%;
+      padding-bottom: 155%; /* aspect ratio */
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.7s cubic-bezier(0.23, 1, 0.32, 1);
+      border-radius: 18px;
+    }
+
+    .card-wrap:hover .card-inner {
+      transform: rotateY(12deg) rotateX(-5deg) scale(1.06);
+    }
+
+    .card-face {
+      position: absolute; inset: 0;
+      border-radius: 18px;
+      backface-visibility: hidden;
+      overflow: hidden;
+    }
+
+    /* CARD FRONT — design */
+    .card-front {
+      background: linear-gradient(145deg, #0a0a2e, #12103a, #0d0d28);
+      border: 1.5px solid var(--border-glow);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: space-between;
+      padding: 14px 10px 12px;
+      position: relative;
+    }
+
+    /* Holographic shimmer overlay */
+    .card-front::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(125deg,
+        transparent 0%, rgba(255,215,0,0.05) 30%,
+        transparent 50%, rgba(0,245,255,0.06) 70%,
+        transparent 100%);
+      border-radius: 18px;
+      animation: holoShift 4s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    @keyframes holoShift {
+      0% { opacity: 0.4; transform: translateX(-10px); }
+      100% { opacity: 1; transform: translateX(10px); }
+    }
+
+    /* Top number badge */
+    .card-number {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 10px; font-weight: 900;
+      color: var(--gold);
+      letter-spacing: 2px;
+      background: rgba(255,215,0,0.1);
+      border: 1px solid rgba(255,215,0,0.3);
+      padding: 3px 10px;
+      border-radius: 100px;
+      width: fit-content;
+      align-self: flex-start;
+    }
+
+    /* Card icon area */
+    .card-icon-wrap {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center;
+      width: 100%;
+      position: relative;
+    }
+
+    .card-orb {
+      width: 65px; height: 65px;
+      border-radius: 50%;
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+      animation: orbFloat 3s ease-in-out infinite;
+    }
+
+    .card-orb::before {
+      content: '';
+      position: absolute; inset: -4px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      border-top-color: var(--gold);
+      border-right-color: rgba(255,215,0,0.3);
+      animation: orbRing 2s linear infinite;
+    }
+
+    .card-orb::after {
+      content: '';
+      position: absolute; inset: -10px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,215,0,0.15);
+    }
+
+    @keyframes orbFloat {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+
+    @keyframes orbRing {
+      to { transform: rotate(360deg); }
+    }
+
+    .card-label {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px; letter-spacing: 2px;
+      color: #fff;
+      text-align: center;
+      text-shadow: 0 0 20px rgba(255,215,0,0.5);
+    }
+
+    .card-cta {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 8px; font-weight: 700;
+      letter-spacing: 2px; color: var(--dark);
+      background: linear-gradient(90deg, var(--gold), #FFA500);
+      padding: 5px 14px; border-radius: 100px;
+      text-transform: uppercase;
+      opacity: 0.9;
+      transition: opacity 0.2s;
+    }
+
+    .card-wrap:hover .card-cta { opacity: 1; }
+
+    /* Corner decoration */
+    .card-corner {
+      position: absolute;
+      width: 14px; height: 14px;
+      border-color: rgba(255,215,0,0.4);
+      border-style: solid;
+      border-width: 0;
+    }
+
+    .card-corner.tl { top: 8px; left: 8px; border-top-width: 2px; border-left-width: 2px; border-radius: 3px 0 0 0; }
+    .card-corner.tr { top: 8px; right: 8px; border-top-width: 2px; border-right-width: 2px; border-radius: 0 3px 0 0; }
+    .card-corner.bl { bottom: 8px; left: 8px; border-bottom-width: 2px; border-left-width: 2px; border-radius: 0 0 0 3px; }
+    .card-corner.br { bottom: 8px; right: 8px; border-bottom-width: 2px; border-right-width: 2px; border-radius: 0 0 3px 0; }
+
+    /* ===== GLOW AURA on cards ===== */
+    .card-wrap::after {
+      content: '';
+      position: absolute; inset: -3px;
+      border-radius: 21px;
+      background: transparent;
+      box-shadow: 0 0 0 0 rgba(255,215,0,0);
+      transition: box-shadow 0.4s, inset 0.4s;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .card-wrap:hover::after {
+      box-shadow: 0 0 30px 6px rgba(255,215,0,0.25), 0 0 60px 15px rgba(255,45,85,0.15);
+    }
+
+    /* ===== CARD IMAGE VERSION (if images exist) ===== */
+    .card-img {
+      width: 100%; height: 100%;
+      object-fit: cover; border-radius: 18px;
+    }
+
+    /* ===== SCAN LINE on hover ===== */
+    .card-scan {
+      position: absolute; inset: 0;
+      border-radius: 18px;
+      overflow: hidden;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .card-wrap:hover .card-scan { opacity: 1; }
+
+    .card-scan::after {
+      content: '';
+      position: absolute;
+      top: -100%; left: 0; right: 0;
+      height: 100%;
+      background: linear-gradient(to bottom, transparent 40%, rgba(255,215,0,0.08) 50%, transparent 60%);
+      animation: scanLine 1.5s linear infinite;
+    }
+
+    @keyframes scanLine {
+      to { top: 200%; }
+    }
+
+    /* ===== BOTTOM STATUS BAR ===== */
+    .status-bar {
+      width: 100%;
+      padding: 8px 40px 12px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-top: 1px solid rgba(255,215,0,0.1);
+      background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
+      position: relative; z-index: 10;
+    }
+
+    .status-item {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+    }
+
+    .status-label {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 7px; font-weight: 400;
+      letter-spacing: 3px; color: rgba(255,215,0,0.5);
+      text-transform: uppercase;
+    }
+
+    .status-value {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 18px; font-weight: 900;
+      color: var(--gold);
+      line-height: 1;
+      text-shadow: 0 0 15px rgba(255,215,0,0.6);
+    }
+
+    .status-divider {
+      width: 1px; height: 36px;
+      background: linear-gradient(to bottom, transparent, rgba(255,215,0,0.3), transparent);
+    }
+
+    /* LIVE DOT */
+    .live-pill {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(255,45,85,0.15);
+      border: 1px solid rgba(255,45,85,0.4);
+      padding: 5px 14px; border-radius: 100px;
+    }
+
+    .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--crimson);
+      animation: livePulse 1s ease-in-out infinite;
+    }
+
+    @keyframes livePulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.5); opacity: 0.6; }
+    }
+
+    .live-text {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 9px; font-weight: 700;
+      letter-spacing: 3px; color: var(--crimson);
+      text-transform: uppercase;
+    }
+
+    /* COUNTDOWN */
+    .countdown-wrap {
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    .countdown-seg {
+      display: flex; flex-direction: column; align-items: center;
+    }
+
+    .countdown-num {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 20px; font-weight: 900;
+      color: var(--electric);
+      text-shadow: 0 0 15px var(--electric);
+      line-height: 1;
+    }
+
+    .countdown-unit {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 7px; color: rgba(0,245,255,0.5);
+      letter-spacing: 2px;
+    }
+
+    .countdown-colon {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 18px; color: var(--gold);
+      padding-bottom: 12px; opacity: 0.7;
+      animation: colonBlink 1s step-end infinite;
+    }
+
+    @keyframes colonBlink {
+      50% { opacity: 0; }
+    }
+
+    /* ===== MODAL OVERLAY ===== */
+    #modal {
+      position: fixed; inset: 0; z-index: 1000;
+      display: none;
+      align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(12px);
+    }
+
+    #modal.active { display: flex; }
+
+    .modal-card {
+      background: linear-gradient(145deg, #0c0c2e, #161030);
+      border: 2px solid rgba(255,215,0,0.5);
+      border-radius: 24px;
+      padding: 48px 56px;
+      text-align: center;
+      position: relative;
+      max-width: 440px; width: 90%;
+      box-shadow: 0 0 80px rgba(255,215,0,0.2), 0 0 160px rgba(255,45,85,0.1);
+      animation: modalEntry 0.6s cubic-bezier(0.23,1,0.32,1);
+    }
+
+    @keyframes modalEntry {
+      from { transform: scale(0.7) translateY(40px); opacity: 0; }
+      to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    .modal-spinner {
+      width: 80px; height: 80px; margin: 0 auto 24px;
+      border-radius: 50%;
+      border: 3px solid rgba(255,215,0,0.15);
+      border-top-color: var(--gold);
+      border-right-color: var(--crimson);
+      animation: bigSpin 0.8s linear infinite;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+
+    @keyframes bigSpin { to { transform: rotate(360deg); } }
+
+    .modal-spinner-inner {
+      position: absolute; inset: 8px;
+      border-radius: 50%;
+      border: 2px solid rgba(0,245,255,0.2);
+      border-bottom-color: var(--electric);
+      animation: bigSpin 1.2s linear infinite reverse;
+    }
+
+    .modal-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 40px; letter-spacing: 4px;
+      background: linear-gradient(135deg, var(--gold), #fff, var(--crimson));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .modal-text {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 14px; font-weight: 300; color: rgba(255,255,255,0.6);
+      letter-spacing: 1px; margin-bottom: 32px;
+    }
+
+    .modal-btns {
+      display: flex; gap: 12px; justify-content: center;
+    }
+
+    .btn-enter {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 11px; font-weight: 700; letter-spacing: 2px;
+      padding: 14px 32px; border-radius: 12px; border: none;
+      background: linear-gradient(135deg, var(--gold), #FFA500);
+      color: #000; cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      text-decoration: none; display: inline-block;
+    }
+
+    .btn-enter:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 30px rgba(255,215,0,0.5);
+    }
+
+    .btn-cancel {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 11px; font-weight: 400; letter-spacing: 2px;
+      padding: 14px 32px; border-radius: 12px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.5); cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-cancel:hover {
+      border-color: rgba(255,255,255,0.5);
+      color: #fff;
+    }
+
+    /* ===== FLOATING PARTICLES (DOM) ===== */
+    .sparkle {
+      position: fixed;
+      pointer-events: none; z-index: 3;
+      border-radius: 50%;
+      animation: sparkleFly linear forwards;
+    }
+
+    @keyframes sparkleFly {
+      0% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+      100% { opacity: 0; transform: translateY(-120px) scale(0) rotate(360deg); }
+    }
+
+    /* ===== INITIAL LOAD SCREEN ===== */
+    #loadScreen {
+      position: fixed; inset: 0; z-index: 9999;
+      background: #050510;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 20px;
+    }
+
+    .load-ring {
+      width: 90px; height: 90px;
+      border-radius: 50%;
+      border: 3px solid rgba(255,215,0,0.1);
+      border-top-color: var(--gold);
+      animation: bigSpin 1s linear infinite;
+      position: relative;
+    }
+
+    .load-ring::after {
+      content: '';
+      position: absolute; inset: 10px; border-radius: 50%;
+      border: 2px solid rgba(255,45,85,0.2);
+      border-bottom-color: var(--crimson);
+      animation: bigSpin 1.6s linear infinite reverse;
+    }
+
+    .load-label {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 11px; letter-spacing: 6px; color: rgba(255,215,0,0.7);
+      text-transform: uppercase;
+      animation: loadPulse 1s ease-in-out infinite;
+    }
+
+    @keyframes loadPulse { 50% { opacity: 0.3; } }
+
+    /* ===== CARD STAGGER ANIMATION ===== */
+    .card-wrap {
+      opacity: 0;
+      transform: translateY(40px);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 1024px) {
+      .card-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    }
+
+    @media (max-width: 600px) {
+      .card-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      header { padding: 12px 16px 0; }
+      .status-bar { padding: 6px 16px 10px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- LOAD SCREEN -->
+  <div id="loadScreen">
+    <div class="load-ring"></div>
+    <div class="load-label">Initializing Lucky Draw</div>
+  </div>
+
+  <!-- CANVAS BACKGROUND -->
+  <canvas id="bgCanvas"></canvas>
+  <div class="noise"></div>
+  <div class="vignette"></div>
+
+  <!-- APP -->
+  <div id="app">
+
+    <!-- HEADER -->
+    <header>
+      <div class="logo-badge">
+        <div class="logo-hex">CPC</div>
+        <div class="logo-text">
+          <span class="logo-brand">Coromandel</span>
+          <span class="logo-sub">Lucky Draw · 2025</span>
+        </div>
+      </div>
+      <a href="thank.html" class="btn-thankyou">Thank You ✦</a>
+    </header>
+
+    <!-- HERO -->
+    <div class="hero" id="hero">
+      <div class="hero-eyebrow">✦ Select Your Destiny ✦</div>
+      <div class="hero-title">Pick A <span class="accent">Lucky</span><br>Card</div>
+      <div class="hero-rule"></div>
+      <div class="hero-sub">Six fates await — one is yours</div>
+    </div>
+
+    <!-- CARD STAGE -->
+    <div class="card-stage">
+      <div class="card-grid" id="cardGrid"></div>
+    </div>
+
+    <!-- STATUS BAR -->
+    <div class="status-bar">
+      <div class="live-pill">
+        <div class="live-dot"></div>
+        <span class="live-text">Live Event</span>
+      </div>
+
+      <div style="display:flex;gap:28px;align-items:center;">
+        <div class="status-item">
+          <span class="status-label">Participants</span>
+          <span class="status-value" id="statParticipants">—</span>
+        </div>
+        <div class="status-divider"></div>
+        <div class="status-item">
+          <span class="status-label">Winners</span>
+          <span class="status-value" id="statWinners">6</span>
+        </div>
+        <div class="status-divider"></div>
+        <div class="status-item">
+          <span class="status-label">Cards Left</span>
+          <span class="status-value" id="statCards">6</span>
+        </div>
+      </div>
+
+      <!-- Countdown -->
+      <div class="countdown-wrap">
+        <div class="countdown-seg">
+          <span class="countdown-num" id="cdHour">00</span>
+          <span class="countdown-unit">HRS</span>
+        </div>
+        <span class="countdown-colon">:</span>
+        <div class="countdown-seg">
+          <span class="countdown-num" id="cdMin">30</span>
+          <span class="countdown-unit">MIN</span>
+        </div>
+        <span class="countdown-colon">:</span>
+        <div class="countdown-seg">
+          <span class="countdown-num" id="cdSec">00</span>
+          <span class="countdown-unit">SEC</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MODAL -->
+  <div id="modal">
+    <div class="modal-card" id="modalCard">
+      <div class="modal-spinner">
+        <div class="modal-spinner-inner"></div>
+      </div>
+      <div class="modal-title" id="modalTitle">Fate Awaits!</div>
+      <div class="modal-text" id="modalText">You have selected <strong id="modalCardName"></strong>.<br>Ready to reveal your fortune?</div>
+      <div class="modal-btns">
+        <a href="#" class="btn-enter" id="modalGo">Reveal My Fate →</a>
+        <button class="btn-cancel" onclick="closeModal()">← Go Back</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====================================================
+    //  CONFIGURATION — edit cards & navigation here
+    // ====================================================
+    const CONFIG = {
+      pageBasePath: "https://dsankush.github.io/coro-mh-lucky-draw/",
+      imagePath: "https://raw.githubusercontent.com/dsankush/coro-mh-lucky-draw/main/DB/entry/",
+      participants: 248, // update as needed
+      // Set countdown target (ms from now). Default: 30 min from page load
+      countdownSeconds: 30 * 60,
+      cards: [
+        { label: "Card One",   icon: "🏆", link: "page1/page1.html", color: "#FFD700", image: null },
+        { label: "Card Two",   icon: "🎯", link: "page2/page2.html", color: "#FF2D55", image: null },
+        { label: "Card Three", icon: "💎", link: "page3/page3.html", color: "#00F5FF", image: null },
+        { label: "Card Four",  icon: "⚡", link: "page4/page4.html", color: "#BF00FF", image: null },
+        { label: "Card Five",  icon: "🔥", link: "page5/page5.html", color: "#FF8C00", image: null },
+        { label: "Card Six",   icon: "🌟", link: "page6/page6.html", color: "#00FF88", image: null },
+      ]
+    };
+
+    // ====================================================
+    //  CANVAS PARTICLE FIELD
+    // ====================================================
+    (function initParticles() {
+      const canvas = document.getElementById('bgCanvas');
+      const ctx = canvas.getContext('2d');
+      let W, H, particles = [], stars = [];
+
+      function resize() {
+        W = canvas.width = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      // Stars
+      for (let i = 0; i < 200; i++) {
+        stars.push({
+          x: Math.random(), y: Math.random(),
+          r: Math.random() * 1.2 + 0.2,
+          a: Math.random(),
+          speed: Math.random() * 0.0003 + 0.0001
+        });
+      }
+
+      // Floating orbs
+      for (let i = 0; i < 18; i++) {
+        particles.push({
+          x: Math.random() * window.innerWidth,
+          y: Math.random() * window.innerHeight,
+          r: Math.random() * 80 + 30,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: (Math.random() - 0.5) * 0.3,
+          hue: Math.random() < 0.5 ? 45 : (Math.random() < 0.5 ? 340 : 180),
+          a: Math.random() * 0.06 + 0.02
+        });
+      }
+
+      // Grid lines
+      function drawGrid(ctx, W, H) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255,215,0,0.04)';
+        ctx.lineWidth = 1;
+        const step = 60;
+        for (let x = 0; x < W; x += step) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+        }
+        for (let y = 0; y < H; y += step) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      let t = 0;
+      function animate() {
+        t++;
+        ctx.clearRect(0, 0, W, H);
+
+        // Deep gradient bg
+        const grad = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, W * 0.8);
+        grad.addColorStop(0, '#0a0820');
+        grad.addColorStop(0.5, '#060518');
+        grad.addColorStop(1, '#020210');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+
+        // Grid
+        drawGrid(ctx, W, H);
+
+        // Stars
+        stars.forEach(s => {
+          s.a += s.speed;
+          const alpha = 0.3 + 0.5 * Math.sin(s.a * 5);
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = '#fff';
+          ctx.beginPath();
+          ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        });
+
+        // Orbs
+        particles.forEach(p => {
+          p.x += p.vx; p.y += p.vy;
+          if (p.x < -p.r) p.x = W + p.r;
+          if (p.x > W + p.r) p.x = -p.r;
+          if (p.y < -p.r) p.y = H + p.r;
+          if (p.y > H + p.r) p.y = -p.r;
+
+          const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+          g.addColorStop(0, `hsla(${p.hue},100%,70%,${p.a})`);
+          g.addColorStop(1, `hsla(${p.hue},100%,50%,0)`);
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        requestAnimationFrame(animate);
+      }
+
+      animate();
+    })();
+
+    // ====================================================
+    //  BUILD CARDS
+    // ====================================================
+    function buildCards() {
+      const grid = document.getElementById('cardGrid');
+
+      CONFIG.cards.forEach((card, i) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'card-wrap';
+        wrap.addEventListener('click', () => openModal(card, i));
+
+        const inner = document.createElement('div');
+        inner.className = 'card-inner';
+
+        const front = document.createElement('div');
+        front.className = 'card-face card-front';
+        front.style.setProperty('--card-accent', card.color);
+
+        // If image provided, use it; else show designed card
+        if (card.image) {
+          const img = document.createElement('img');
+          img.className = 'card-img';
+          img.src = CONFIG.imagePath + card.image;
+          img.alt = card.label;
+          front.appendChild(img);
+        } else {
+          front.innerHTML = `
+            <span class="card-number">#0${i + 1}</span>
+            <div class="card-icon-wrap">
+              <div class="card-orb" style="background:radial-gradient(circle,${card.color}22,${card.color}08);">
+                <span style="font-size:26px">${card.icon}</span>
+              </div>
+            </div>
+            <div class="card-label">${card.label}</div>
+            <div class="card-cta">TAP TO PICK</div>
+            <div class="card-corner tl"></div>
+            <div class="card-corner tr"></div>
+            <div class="card-corner bl"></div>
+            <div class="card-corner br"></div>
+          `;
+          // Dynamic color border
+          front.style.borderColor = card.color + '55';
+        }
+
+        const scan = document.createElement('div');
+        scan.className = 'card-scan';
+
+        inner.appendChild(front);
+        wrap.appendChild(inner);
+        wrap.appendChild(scan);
+        grid.appendChild(wrap);
+      });
+    }
+
+    // ====================================================
+    //  MODAL
+    // ====================================================
+    let currentLink = '#';
+
+    function openModal(card, index) {
+      currentLink = CONFIG.pageBasePath + card.link;
+      document.getElementById('modalCardName').textContent = card.label;
+      document.getElementById('modalGo').href = currentLink;
+      document.getElementById('modal').classList.add('active');
+
+      // Launch confetti
+      launchConfetti(card.color);
+      spawnSparkles(card.color);
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('active');
+    }
+
+    document.getElementById('modal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+
+    // ====================================================
+    //  CONFETTI
+    // ====================================================
+    function launchConfetti(color) {
+      const count = 120;
+      const defaults = { origin: { y: 0.5 }, zIndex: 9999 };
+
+      confetti({ ...defaults, particleCount: count * 0.3, spread: 80, colors: [color, '#FFD700', '#fff'] });
+      setTimeout(() => {
+        confetti({ ...defaults, particleCount: count * 0.2, angle: 60, spread: 55, origin: { x: 0, y: 0.6 }, colors: [color, '#FF2D55'] });
+        confetti({ ...defaults, particleCount: count * 0.2, angle: 120, spread: 55, origin: { x: 1, y: 0.6 }, colors: [color, '#00F5FF'] });
+      }, 200);
+    }
+
+    // ====================================================
+    //  DOM SPARKLES
+    // ====================================================
+    function spawnSparkles(color) {
+      for (let i = 0; i < 14; i++) {
+        const s = document.createElement('div');
+        s.className = 'sparkle';
+        const size = Math.random() * 8 + 4;
+        s.style.cssText = `
+          width:${size}px; height:${size}px;
+          background:${color};
+          left:${10 + Math.random() * 80}vw;
+          top:${20 + Math.random() * 60}vh;
+          animation-duration:${0.8 + Math.random() * 0.8}s;
+          box-shadow:0 0 ${size * 2}px ${color};
+        `;
+        document.body.appendChild(s);
+        s.addEventListener('animationend', () => s.remove());
+      }
+    }
+
+    // ====================================================
+    //  COUNTDOWN
+    // ====================================================
+    let timeLeft = CONFIG.countdownSeconds;
+
+    function updateCountdown() {
+      const h = Math.floor(timeLeft / 3600);
+      const m = Math.floor((timeLeft % 3600) / 60);
+      const s = timeLeft % 60;
+      document.getElementById('cdHour').textContent = String(h).padStart(2, '0');
+      document.getElementById('cdMin').textContent = String(m).padStart(2, '0');
+      document.getElementById('cdSec').textContent = String(s).padStart(2, '0');
+      if (timeLeft > 0) timeLeft--;
+    }
+
+    setInterval(updateCountdown, 1000);
+    updateCountdown();
+
+    // ====================================================
+    //  STATS COUNTER ANIMATION
+    // ====================================================
+    function animateCount(el, target, duration) {
+      let start = 0;
+      const step = target / (duration / 16);
+      const timer = setInterval(() => {
+        start = Math.min(start + step, target);
+        el.textContent = Math.floor(start);
+        if (start >= target) clearInterval(timer);
+      }, 16);
+    }
+
+    // ====================================================
+    //  BOOT SEQUENCE
+    // ====================================================
+    window.addEventListener('load', () => {
+      buildCards();
+
+      // Hide load screen after brief delay
+      setTimeout(() => {
+        gsap.to('#loadScreen', {
+          opacity: 0, duration: 0.6, ease: 'power2.in',
+          onComplete: () => {
+            document.getElementById('loadScreen').style.display = 'none';
+          }
+        });
+
+        // Animate hero
+        gsap.fromTo('#hero', { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 1, ease: 'power3.out', delay: 0.1 });
+
+        // Stagger cards
+        gsap.to('.card-wrap', {
+          opacity: 1, y: 0, duration: 0.7, ease: 'back.out(1.5)',
+          stagger: 0.1, delay: 0.4
+        });
+
+        // Animate stats
+        setTimeout(() => {
+          animateCount(document.getElementById('statParticipants'), CONFIG.participants, 1200);
+        }, 800);
+
+      }, 900);
+    });
+
+    // ====================================================
+    //  CARD HOVER SOUND STUB (wire up Howler.js if needed)
+    //  e.g.: const snd = new Howl({ src: ['hover.mp3'] });
+    //  card.addEventListener('mouseenter', () => snd.play());
+    // ====================================================
+
+  </script>
+</body>
+</html>
