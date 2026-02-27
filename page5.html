@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Mystery Box — Lucky Draw</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;700;800&family=Orbitron:wght@400;700;900&family=Caveat:wght@600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<style>
+:root{--gold:#FFD700;--amber:#FF9500;--rose:#FF2D6B;--cyan:#00E5FF;--violet:#C653FF;--green:#00FF88;--ink:#05050F;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--ink);font-family:'Syne',sans-serif;color:#fff;cursor:none;}
+#cursor{position:fixed;z-index:99999;width:16px;height:16px;border:2px solid var(--gold);border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);transition:transform .1s;mix-blend-mode:difference;}
+#cursor.on{transform:translate(-50%,-50%) scale(2.2);}
+canvas#bg{position:fixed;inset:0;z-index:0;pointer-events:none;}
+.vignette{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,transparent 30%,rgba(5,5,15,.9) 100%);}
+header{position:fixed;top:0;left:0;right:0;z-index:50;padding:16px 28px;display:flex;align-items:center;justify-content:space-between;}
+.back-btn{font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;text-decoration:none;color:rgba(255,215,0,.7);border:1px solid rgba(255,215,0,.2);padding:8px 18px;border-radius:100px;transition:all .2s;cursor:none;}
+.back-btn:hover{color:var(--gold);border-color:rgba(255,215,0,.6);}
+.page-badge{font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:4px;color:rgba(255,215,0,.4);}
+#scene{position:relative;z-index:2;width:100vw;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;}
+.game-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(28px,4vw,52px);letter-spacing:6px;background:linear-gradient(135deg,#fff,var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;opacity:0;}
+.game-sub{font-family:'Caveat',cursive;font-size:16px;color:rgba(255,215,0,.55);opacity:0;}
+
+/* ── MYSTERY BOX ── */
+.box-stage{display:flex;flex-direction:column;align-items:center;gap:20px;opacity:0;}
+
+.box-wrap{position:relative;width:200px;height:200px;cursor:none;}
+
+/* Question marks floating around */
+.qmark{
+  position:absolute;font-family:'Bebas Neue',sans-serif;font-size:24px;
+  color:rgba(255,215,0,.2);pointer-events:none;
+  animation:qfloat 3s ease-in-out infinite;
+}
+.qmark:nth-child(1){top:-20px;left:-30px;animation-delay:0s;}
+.qmark:nth-child(2){top:-10px;right:-25px;animation-delay:.8s;font-size:18px;}
+.qmark:nth-child(3){bottom:-15px;left:-20px;animation-delay:1.4s;font-size:30px;}
+.qmark:nth-child(4){bottom:-20px;right:-28px;animation-delay:.4s;font-size:20px;}
+@keyframes qfloat{0%,100%{transform:translateY(0) rotate(0deg);opacity:.2;}50%{transform:translateY(-12px) rotate(10deg);opacity:.5;}}
+
+.mystery-box{
+  width:200px;height:200px;
+  position:relative;transform-origin:center bottom;
+  animation:boxShake 2.5s ease-in-out infinite;
+}
+
+/* Box body */
+.box-body{
+  position:absolute;bottom:0;left:0;right:0;height:160px;
+  background:linear-gradient(135deg,#1a0a3a,#2d1060,#1a0a3a);
+  border:2px solid rgba(255,215,0,.4);border-radius:6px 6px 10px 10px;
+  overflow:hidden;display:flex;align-items:center;justify-content:center;
+  font-size:60px;
+  box-shadow:0 0 40px rgba(198,83,255,.2),0 0 80px rgba(255,215,0,.1);
+}
+.box-body::before{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(45deg,rgba(255,215,0,.03) 0px,rgba(255,215,0,.03) 2px,transparent 2px,transparent 14px);
+}
+/* Ribbon vertical */
+.box-body::after{
+  content:'';position:absolute;top:0;bottom:0;left:50%;transform:translateX(-50%);
+  width:28px;background:linear-gradient(135deg,rgba(255,215,0,.18),rgba(255,150,0,.1),rgba(255,215,0,.18));
+  border-left:1px solid rgba(255,215,0,.2);border-right:1px solid rgba(255,215,0,.2);
+}
+
+/* Box lid */
+.box-lid{
+  position:absolute;top:0;left:-6px;right:-6px;height:50px;
+  background:linear-gradient(135deg,#25106a,#3d1a8a,#25106a);
+  border:2px solid rgba(255,215,0,.5);border-radius:8px;
+  box-shadow:0 0 20px rgba(198,83,255,.3);
+  transform-origin:center bottom;
+  transition:transform .4s cubic-bezier(.36,.07,.19,.97);
+  z-index:5;
+}
+/* Lid ribbon horizontal */
+.box-lid::after{
+  content:'';position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);
+  height:14px;background:linear-gradient(90deg,rgba(255,215,0,.15),rgba(255,150,0,.12),rgba(255,215,0,.15));
+  border-top:1px solid rgba(255,215,0,.25);border-bottom:1px solid rgba(255,215,0,.25);
+}
+/* Bow */
+.box-bow{
+  position:absolute;top:-16px;left:50%;transform:translateX(-50%);
+  font-size:28px;animation:bowBounce 1.5s ease-in-out infinite;z-index:6;
+}
+@keyframes bowBounce{0%,100%{transform:translateX(-50%) scale(1);}50%{transform:translateX(-50%) scale(1.1);}}
+
+/* Glow aura */
+.box-glow{
+  position:absolute;inset:-20px;border-radius:50%;
+  background:radial-gradient(circle,rgba(198,83,255,.12) 0%,transparent 70%);
+  animation:glowPulse 1.5s ease-in-out infinite alternate;pointer-events:none;
+}
+@keyframes glowPulse{0%{transform:scale(.9);opacity:.6;}100%{transform:scale(1.1);opacity:1;}}
+
+@keyframes boxShake{
+  0%,100%{transform:rotate(0deg);}
+  10%{transform:rotate(-3deg);}
+  20%{transform:rotate(3deg);}
+  30%{transform:rotate(-2deg);}
+  40%{transform:rotate(2deg);}
+  50%{transform:rotate(0deg);}
+}
+
+/* prize burst */
+.prize-burst{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-size:70px;opacity:0;pointer-events:none;z-index:10;
+  animation:burstAnim .8s cubic-bezier(0.17,0.89,0.32,1.27) forwards;
+}
+@keyframes burstAnim{
+  0%{transform:translate(-50%,-60%) scale(0);opacity:0;}
+  60%{transform:translate(-50%,-70%) scale(1.2);opacity:1;}
+  100%{transform:translate(-50%,-60%) scale(1);opacity:1;}
+}
+
+/* Open button */
+.open-btn{
+  font-family:'Orbitron',sans-serif;font-size:12px;font-weight:900;letter-spacing:3px;
+  padding:15px 48px;border-radius:14px;border:none;cursor:none;
+  background:linear-gradient(135deg,var(--violet),var(--rose),var(--amber));color:#fff;
+  box-shadow:0 0 28px rgba(198,83,255,.4);position:relative;overflow:hidden;transition:transform .2s;
+  opacity:0;
+}
+.open-btn::before{content:'';position:absolute;top:-50%;left:-80%;width:50%;height:200%;background:rgba(255,255,255,.22);transform:skewX(-20deg);animation:shine 2.5s infinite;}
+@keyframes shine{to{left:160%;}}
+.open-btn:hover{transform:scale(1.06);}
+
+/* Reveal counter */
+.tap-hint{font-family:'Caveat',cursive;font-size:17px;color:rgba(255,215,0,.4);animation:hintPulse 1.5s ease-in-out infinite;}
+@keyframes hintPulse{0%,100%{opacity:.4;}50%{opacity:.9;}}
+
+/* Result flash */
+.result-flash{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.92);backdrop-filter:blur(20px);opacity:0;pointer-events:none;gap:12px;}
+.result-flash.show{opacity:1;pointer-events:all;}
+.rf-icon{font-size:80px;animation:bounce .6s ease-in-out infinite alternate;}
+@keyframes bounce{to{transform:translateY(-14px) scale(1.05);}}
+.rf-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(36px,5vw,72px);letter-spacing:6px;background:linear-gradient(135deg,var(--gold),#fff,var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.rf-sub{font-family:'Syne',sans-serif;font-size:15px;color:rgba(255,255,255,.6);}
+.rf-prize{font-family:'Bebas Neue',sans-serif;font-size:clamp(18px,2.5vw,30px);color:var(--gold);letter-spacing:2px;}
+.reveal-btn{margin-top:16px;font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:3px;padding:14px 36px;border-radius:12px;border:none;cursor:none;background:linear-gradient(135deg,var(--gold),var(--amber));color:#000;transition:transform .2s;}
+.reveal-btn:hover{transform:scale(1.06);}
+
+/* CAROUSEL */
+#carousel{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.95);backdrop-filter:blur(24px);display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px;}
+#carousel.show{display:flex;}
+.car-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(28px,4vw,56px);letter-spacing:6px;background:linear-gradient(135deg,var(--gold),var(--rose));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.car-sub{font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:5px;color:rgba(255,215,0,.5);text-transform:uppercase;}
+.car-viewport{overflow:hidden;width:100%;max-width:960px;}
+.car-track{display:flex;gap:16px;transition:transform .6s cubic-bezier(0.23,1,0.32,1);}
+.car-card{flex:0 0 calc(33.333% - 11px);background:linear-gradient(145deg,#0f0e2c,#12103a);border:1.5px solid rgba(255,215,0,.2);border-radius:20px;padding:22px 18px;position:relative;overflow:hidden;}
+.car-card::before{content:'';position:absolute;inset:0;border-radius:20px;background:linear-gradient(125deg,transparent 20%,rgba(255,215,0,.04) 40%,transparent 55%,rgba(0,229,255,.03) 70%,transparent 90%);}
+.car-card-num{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;letter-spacing:3px;color:rgba(255,215,0,.4);}
+.car-card-name{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#fff;margin:6px 0 2px;}
+.car-card-dept{font-family:'Syne',sans-serif;font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px;}
+.car-card-prize{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;background:linear-gradient(90deg,var(--gold),var(--amber));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.car-card-status{display:inline-block;margin-top:10px;font-family:'Orbitron',sans-serif;font-size:7px;font-weight:700;letter-spacing:3px;padding:3px 10px;border-radius:100px;text-transform:uppercase;}
+.status-winner{background:rgba(255,215,0,.15);border:1px solid rgba(255,215,0,.35);color:var(--gold);}
+.status-runner{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.25);color:var(--cyan);}
+.car-card-cardlabel{position:absolute;top:14px;right:14px;font-family:'Orbitron',sans-serif;font-size:7px;letter-spacing:2px;color:rgba(255,215,0,.3);}
+.car-nav{display:flex;align-items:center;gap:16px;}
+.car-arrow{width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(255,215,0,.3);background:rgba(255,215,0,.08);display:flex;align-items:center;justify-content:center;cursor:none;font-size:16px;color:rgba(255,215,0,.7);transition:all .2s;}
+.car-arrow:hover{background:rgba(255,215,0,.18);color:var(--gold);}
+.car-dots{display:flex;gap:6px;}
+.car-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,215,0,.2);cursor:none;transition:all .3s;}
+.car-dot.active{background:var(--gold);box-shadow:0 0 8px rgba(255,215,0,.5);}
+.car-home{font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:3px;padding:12px 28px;border-radius:10px;border:1.5px solid rgba(255,215,0,.3);background:transparent;color:rgba(255,215,0,.7);cursor:none;transition:all .2s;text-decoration:none;display:inline-block;}
+.car-home:hover{border-color:var(--gold);color:var(--gold);}
+.car-progress{width:100%;max-width:960px;height:2px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;}
+.car-progress-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--rose));width:0%;}
+</style>
+</head>
+<body>
+<div id="cursor"></div>
+<canvas id="bg"></canvas>
+<div class="vignette"></div>
+<header>
+  <a href="../index.html" class="back-btn">← Back</a>
+  <span class="page-badge">CARD FIVE · MYSTERY BOX</span>
+</header>
+
+<div id="scene">
+  <div class="game-title">MYSTERY BOX</div>
+  <div class="game-sub">✦ What lies within? Click to find out ✦</div>
+
+  <div class="box-stage" id="boxStage">
+    <div class="box-wrap" id="boxWrap">
+      <div class="box-glow"></div>
+      <div class="qmark">?</div>
+      <div class="qmark">?</div>
+      <div class="qmark">?</div>
+      <div class="qmark">?</div>
+
+      <div class="mystery-box" id="mysteryBox">
+        <div class="box-lid" id="boxLid">
+          <div class="box-bow">🎀</div>
+        </div>
+        <div class="box-body" id="boxBody">
+          <span id="boxContent">?</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tap-hint" id="tapHint">👆 Click the box to open it</div>
+  </div>
+
+  <button class="open-btn" id="openBtn">🎁 OPEN THE BOX</button>
+</div>
+
+<div class="result-flash" id="resultFlash">
+  <div class="rf-icon" id="rfIcon">🎁</div>
+  <div class="rf-title">SURPRISE!</div>
+  <div class="rf-sub">Your mystery prize has been revealed!</div>
+  <div class="rf-prize" id="rfPrize">Home Theater System</div>
+  <button class="reveal-btn" onclick="loadCarousel()">View All Winners →</button>
+</div>
+
+<div id="carousel">
+  <div class="car-title">🏆 LUCKY DRAW WINNERS</div>
+  <div class="car-sub">Official Results · Coromandel CPC 2025</div>
+  <div class="car-progress"><div class="car-progress-bar" id="carBar"></div></div>
+  <div class="car-viewport"><div class="car-track" id="carTrack"></div></div>
+  <div class="car-nav">
+    <div class="car-arrow" id="carPrev">←</div>
+    <div class="car-dots" id="carDots"></div>
+    <div class="car-arrow" id="carNext">→</div>
+  </div>
+  <a href="../index.html" class="car-home">← Return Home</a>
+</div>
+
+<script>
+const CSV_URL='../data.csv';
+const FALLBACK_DATA=[{ID:'001',Name:'Rajesh Kumar',Department:'Sales & Marketing',Prize:'Gold Trophy + ₹10000 Cash',Card:'Card One',Status:'Winner'},{ID:'002',Name:'Priya Sharma',Department:'Operations',Prize:'Weekend Getaway Package',Card:'Card Two',Status:'Winner'},{ID:'003',Name:'Amit Patel',Department:'Finance',Prize:'Smart Watch Series 8',Card:'Card Three',Status:'Winner'},{ID:'004',Name:'Sunita Reddy',Department:'HR & Admin',Prize:'Laptop Bag + Accessories',Card:'Card Four',Status:'Winner'},{ID:'005',Name:'Vikram Singh',Department:'Logistics',Prize:'Home Theater System',Card:'Card Five',Status:'Winner'},{ID:'006',Name:'Meena Joshi',Department:'Customer Service',Prize:'Dinner for Two - 5 Star',Card:'Card Six',Status:'Winner'},{ID:'007',Name:'Arjun Nair',Department:'IT Department',Prize:'Bluetooth Speaker Set',Card:'Card One',Status:'Runner Up'},{ID:'008',Name:'Deepa Menon',Department:'Quality Control',Prize:'Gift Voucher Rs 5000',Card:'Card Two',Status:'Runner Up'}];
+
+const PRIZES=[{icon:'🏠',label:'Home Theater System'},{icon:'🔥',label:'Premium Experience'},{icon:'⚡',label:'Power Pack Bundle'},{icon:'🎉',label:'Party Surprise Kit'}];
+const chosen=PRIZES[Math.floor(Math.random()*PRIZES.length)];
+
+/* BG */
+(function(){const cv=document.getElementById('bg'),cx=cv.getContext('2d');let W,H,stars=[],orbs=[];function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight;}resize();window.addEventListener('resize',resize);for(let i=0;i<160;i++)stars.push({x:Math.random(),y:Math.random(),r:Math.random()*1+.2,t:Math.random()*6.28,sp:.004+Math.random()*.007});const hues=[45,340,195,275];for(let i=0;i<10;i++)orbs.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:60+Math.random()*80,vx:(Math.random()-.5)*.2,vy:(Math.random()-.5)*.2,hue:hues[i%4],a:.025+Math.random()*.04});function frame(){cx.clearRect(0,0,W,H);const bg=cx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*.8);bg.addColorStop(0,'#0c0a1e');bg.addColorStop(.6,'#07061a');bg.addColorStop(1,'#030212');cx.fillStyle=bg;cx.fillRect(0,0,W,H);stars.forEach(s=>{s.t+=s.sp;cx.save();cx.globalAlpha=.2+.5*Math.sin(s.t);cx.fillStyle='#fff';cx.beginPath();cx.arc(s.x*W,s.y*H,s.r,0,Math.PI*2);cx.fill();cx.restore();});orbs.forEach(o=>{o.x+=o.vx;o.y+=o.vy;if(o.x<-o.r)o.x=W+o.r;if(o.x>W+o.r)o.x=-o.r;if(o.y<-o.r)o.y=H+o.r;if(o.y>H+o.r)o.y=-o.r;const og=cx.createRadialGradient(o.x,o.y,0,o.x,o.y,o.r);og.addColorStop(0,`hsla(${o.hue},100%,65%,${o.a})`);og.addColorStop(1,'transparent');cx.fillStyle=og;cx.beginPath();cx.arc(o.x,o.y,o.r,0,Math.PI*2);cx.fill();});requestAnimationFrame(frame);}frame();})();
+
+/* CURSOR */
+const cur=document.getElementById('cursor');
+document.addEventListener('mousemove',e=>{cur.style.left=e.clientX+'px';cur.style.top=e.clientY+'px';});
+document.querySelectorAll('a,button,.car-arrow,.car-dot,.car-home,.box-wrap').forEach(el=>{el.addEventListener('mouseenter',()=>cur.classList.add('on'));el.addEventListener('mouseleave',()=>cur.classList.remove('on'));});
+
+/* BOX OPEN */
+let opened=false;
+function openBox(){
+  if(opened)return;opened=true;
+  const lid=document.getElementById('boxLid');
+  const content=document.getElementById('boxContent');
+  document.getElementById('tapHint').style.display='none';
+
+  // Shake intensely first
+  gsap.to('#mysteryBox',{rotation:12,duration:.06,yoyo:true,repeat:12,ease:'none',
+    onComplete:()=>{
+      gsap.to('#mysteryBox',{rotation:0,duration:.2});
+      // Lid flies off
+      gsap.to(lid,{rotationX:-160,y:-80,opacity:0,duration:.45,ease:'power3.out',delay:.1});
+      // Content reveals
+      gsap.to(content,{opacity:1,scale:1,duration:0,delay:.3});
+      content.textContent=chosen.icon;
+      gsap.from(content,{scale:0,opacity:0,duration:.6,ease:'back.out(1.8)',delay:.3});
+
+      // Burst particles
+      setTimeout(()=>{
+        confetti({particleCount:160,spread:100,origin:{y:.5},colors:['#FFD700','#C653FF','#fff','#FF2D6B'],zIndex:9999});
+        // Spawn DOM sparks
+        for(let i=0;i<16;i++){
+          const s=document.createElement('div');
+          s.style.cssText=`position:fixed;z-index:9999;pointer-events:none;width:${4+Math.random()*8}px;height:${4+Math.random()*8}px;background:#FFD700;border-radius:50%;left:${30+Math.random()*40}vw;top:${20+Math.random()*60}vh;animation:sparkAnim ${.6+Math.random()*.8}s ease forwards;`;
+          document.body.appendChild(s);setTimeout(()=>s.remove(),1200);
+        }
+        setTimeout(()=>{
+          document.getElementById('rfIcon').textContent=chosen.icon;
+          document.getElementById('rfPrize').textContent=chosen.label;
+          document.getElementById('resultFlash').classList.add('show');
+        },600);
+      },450);
+    }
+  });
+}
+
+document.getElementById('openBtn').addEventListener('click',openBox);
+document.getElementById('boxWrap').addEventListener('click',openBox);
+
+/* CAROUSEL */
+let carData=[],carIndex=0;
+function loadCarousel(){document.getElementById('resultFlash').classList.remove('show');Papa.parse(CSV_URL,{download:true,header:true,skipEmptyLines:true,complete:r=>initCarousel(r.data),error:()=>initCarousel(FALLBACK_DATA)});}
+function initCarousel(data){carData=data;document.getElementById('carousel').classList.add('show');confetti({particleCount:100,spread:80,origin:{y:.4},zIndex:99999});buildCarousel();startAutoPlay();}
+function buildCarousel(){const track=document.getElementById('carTrack'),dots=document.getElementById('carDots');track.innerHTML='';dots.innerHTML='';const pages=Math.ceil(carData.length/3);carData.forEach((row,i)=>{const card=document.createElement('div');card.className='car-card';const isW=(row.Status||'').toLowerCase().includes('winner')&&!(row.Status||'').toLowerCase().includes('runner');card.innerHTML=`<div class="car-card-num">#${String(row.ID||i+1).padStart(3,'0')}</div><div class="car-card-name">${row.Name||'—'}</div><div class="car-card-dept">${row.Department||'—'}</div><div class="car-card-prize">${row.Prize||'—'}</div><div class="car-card-cardlabel">${row.Card||''}</div><span class="car-card-status ${isW?'status-winner':'status-runner'}">${row.Status||'—'}</span>`;track.appendChild(card);});for(let p=0;p<pages;p++){const d=document.createElement('div');d.className='car-dot'+(p===0?' active':'');d.addEventListener('click',()=>goToPage(p));dots.appendChild(d);}goToPage(0);}
+function goToPage(page){carIndex=page;const track=document.getElementById('carTrack');const cardW=track.children[0]?.offsetWidth||260;track.style.transform=`translateX(-${page*3*(cardW+16)}px)`;document.querySelectorAll('.car-dot').forEach((d,i)=>d.classList.toggle('active',i===page));}
+function startAutoPlay(){const pages=Math.ceil(carData.length/3);let prog=0;const bar=document.getElementById('carBar');bar.style.width='0%';setInterval(()=>{prog+=100/60;bar.style.width=Math.min(prog,100)+'%';if(prog>=100){prog=0;bar.style.width='0%';carIndex=(carIndex+1)%pages;goToPage(carIndex);}},1000/6);}
+document.getElementById('carPrev').addEventListener('click',()=>{const p=Math.ceil(carData.length/3);carIndex=(carIndex-1+p)%p;goToPage(carIndex);});
+document.getElementById('carNext').addEventListener('click',()=>{const p=Math.ceil(carData.length/3);carIndex=(carIndex+1)%p;goToPage(carIndex);});
+
+/* INTRO */
+window.addEventListener('load',()=>{
+  gsap.to('.game-title',{opacity:1,duration:.9,ease:'power3.out',delay:.3});
+  gsap.to('.game-sub',{opacity:1,duration:.8,delay:.55});
+  gsap.to('#boxStage',{opacity:1,scale:1,duration:1,ease:'back.out(1.4)',delay:.5});
+  gsap.from('#boxStage',{opacity:0,scale:.8});
+  gsap.to('.open-btn',{opacity:1,duration:.7,ease:'back.out(1.5)',delay:.9});
+  gsap.from('.open-btn',{y:20});
+});
+</script>
+<style>@keyframes sparkAnim{0%{opacity:1;transform:translateY(0) scale(1);}100%{opacity:0;transform:translateY(-80px) scale(0);}}</style>
+</body>
+</html>
